@@ -13,17 +13,6 @@
 - **Ease of Use**: Intuitive user interface and simple configuration options for fast setup and analysis.   
 
 ---
-
-## Installation  
-
-To install PRISMATIC, ensure you have Python 3.8 or later installed. Then clone this repository and install the required dependencies:
-
-```bash
-git clone https://github.com/your_username/PRISMATIC.git  
-cd PRISMATIC  
-pip install -r requirements.txt
-```
-
 # PRISMATIC Analysis Notebook
 
 This repository contains the interactive notebook for analyzing JWST NIRSpec prism spectra.
