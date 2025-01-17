@@ -1,9 +1,0 @@
-astropy
-contourpy
-cycler
-ipympl
-matplotlib
-numpy
-pandas
-scipy
-gdown
