@@ -1,12 +1,29 @@
-# upload_spectra.py
 import os
 import re
 import numpy as np
 import pandas as pd
 from astropy.io import fits
 from scipy.stats import mode as scipy_mode
+import gdown
+import zipfile
 
 pd.options.mode.chained_assignment = None
+
+def download_and_extract_zip(url, output_folder):
+    # Download the zip file
+    zip_path = os.path.join(output_folder, "data.zip")
+    gdown.download(url, zip_path, quiet=False)
+
+    # Check if the downloaded file is a valid zip file
+    if not zipfile.is_zipfile(zip_path):
+        raise zipfile.BadZipFile("File is not a valid zip file")
+
+    # Extract the zip file
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(output_folder)
+    
+    # Remove the zip file after extraction
+    os.remove(zip_path)
 
 def get_spectra_file_paths_and_ids(folder, pointing):
     spectra_dict = {}
@@ -35,12 +52,24 @@ def get_spectra_file_paths_and_ids(folder, pointing):
     return spectra_dict
 
 def main():
-    folder_path = ""  # Update this to the actual folder path
+    # Direct download URL of the Google Drive file
+    google_drive_url = "https://drive.google.com/uc?id=1nLwEX3edQI9ktHof9eAsH0z7lvUYFz7i"
+    output_folder = "data"
+    
+    # Ensure the output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+    # Download and extract the zip file
+    download_and_extract_zip(google_drive_url, output_folder)
+    
+    folder_path = output_folder  # Use the extracted folder as the data source
+
     print("Choose a pointing (1,2,3,5):")
     user_input = input()
     pointing = 'P' + user_input
     pointing_low = 'p' + user_input
-    folder = folder_path + f'CAPERS_UDS_V0.1/{pointing}'
+    folder = folder_path + f'/CAPERS_UDS_V0.1/{pointing}'
 
     spectra_files = get_spectra_file_paths_and_ids(folder, pointing)
 
@@ -54,8 +83,8 @@ def main():
         file2d.append(files['s2d'])
 
     ## redshift catalogs
-    BAGPIPES = pd.read_csv(folder_path + f'CAPERS_UDS_V0.1/solutions/capers_UDS_bagpipes_{pointing}.cat', sep=r'\s+')
-    AT = pd.read_csv(folder_path + f'CAPERS_UDS_V0.1/solutions/CAPERS_{pointing}_zspec.txt', sep=',')
+    BAGPIPES = pd.read_csv(f'solutions/capers_UDS_bagpipes_{pointing}.cat', sep=r'\s+')
+    AT = pd.read_csv(f'solutions/CAPERS_{pointing}_zspec.txt', sep=',')
     ID_AT = AT['file']
     for ids in range(len(ID_AT)):
         match = re.search(r's(\d+)_', ID_AT[ids])
@@ -63,9 +92,9 @@ def main():
             extracted_number = match.group(1)
             ID_AT[ids] = extracted_number
 
-    msaexp = pd.read_csv(folder_path + f'CAPERS_UDS_V0.1/solutions/capers_{pointing_low}_msaexp_zcat.csv')
+    msaexp = pd.read_csv(f'solutions/capers_{pointing_low}_msaexp_zcat.csv')
 
-    lime = pd.read_csv(folder_path + 'CAPERS_UDS_V0.1/solutions/CAPERS_UDS_V01_ASPECT_redshifts_v0.1.txt', sep=r'\s+')
+    lime = pd.read_csv('solutions/CAPERS_UDS_V01_ASPECT_redshifts_v0.1.txt', sep=r'\s+')
     ID_lime = lime['file']
 
     for ids in range(len(ID_lime)):
@@ -74,7 +103,7 @@ def main():
             extracted_number = match.group(1)
             ID_lime[ids] = extracted_number
 
-    marz_file = f'CAPERS_UDS_V0.1/solutions/capers_uds_{pointing}_redshift.fits'
+    marz_file = f'solutions/capers_uds_{pointing}_redshift.fits'
     marz = fits.open(marz_file)
     marz_data = marz[1].data 
     MARZ = pd.DataFrame(marz_data)
@@ -146,7 +175,7 @@ def main():
         "MARZ_Redshift": redshift_marz,
         "Cigale_Redshift": 0*np.ones(len(redshifts)),
         "BAGPIPES_Redshift": redshift_bp,
-        "Mode_Redshift": redshifts_mode,
+        "Redshift_Mode": redshifts_mode,
         "[OIII]+Hβ": [""]*len(galaxies),
         "Hα": [""]*len(galaxies),
         "Lyα": [""]*len(galaxies),

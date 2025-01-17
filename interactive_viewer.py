@@ -104,19 +104,17 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
     ax1d.errorbar(wavelength, flux, yerr=noise, c='#669bbc', fmt='none', alpha=0.4)
 
     colors = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600']
-    offsets = [0.15, 0.3, 0.4, 0.55, 0.7, 0.85]
 
     for idx, (code, data) in enumerate(redshifts_dict.items()):
         if not data["checked"]:
             continue
         z = data["redshift"]
         color = colors[idx % len(colors)]
-        shift = offsets[idx % len(offsets)]
         for line, rest_wavelength in emission_lines.items():
             observed_line = rest_wavelength * (1 + z)
             if np.nanmin(wavelength) < observed_line < np.nanmax(wavelength):
                 ax1d.axvline(observed_line, color=color, ls=":", alpha=0.7, lw=0.8)
-                ax1d.text(observed_line + 5, shift * np.nanmax(flux),
+                ax1d.text(observed_line + 5, 0.85 * np.nanmax(flux),
                           f"{line}", color=color, rotation=90,
                           verticalalignment="center", horizontalalignment="left", fontsize=6)
 
@@ -124,7 +122,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
         observed_line = rest_wavelength * (1 + redshift)
         if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
             ax1d.axvline(observed_line, color='k', ls=':', alpha=0.7, lw=0.8)
-            ax1d.text(observed_line + 5, 0.6 * np.nanmax(flux), f"{line}", color='k',
+            ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='k',
                       rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)
     
     if em_line_check:
@@ -132,7 +130,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
             observed_line = rest_wavelength * (1 + redshift)
             if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
                 ax1d.axvline(observed_line, color='grey', ls=':', alpha=0.7, lw=0.8)
-                ax1d.text(observed_line + 5, 0.6 * np.nanmax(flux), f"{line}", color='grey',
+                ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='grey',
                           rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)        
 
     ax1d.set_xlabel("Wavelength [Å]")
@@ -156,15 +154,16 @@ def interactive_spectrum_viewer(index=0):
 
     codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES"]
     
-    def get_mode_redshift(index):
+    def get_Redshift_Mode(index):
         z_values = [catalog_filtered.iloc[index][f'{code}_Redshift'] for code in codes]
         rounded_values = np.array([round(val, 2) for val in z_values])
         return float(scipy_mode(rounded_values)[0])
     
-    redshift_slider = FloatSlider(value=get_mode_redshift(index), min=0, max=20, step=0.001, description="Redshift:")
+    redshift_slider = FloatSlider(value=get_Redshift_Mode(index), min=0, max=20, step=0.001, description="Redshift:")
     redshift_slider.style.handle_color = 'lightblue'
-    galaxy_id_input = Text(value=str(catalog_filtered.iloc[index]["Galaxy"]), description="ID:", placeholder="Enter ID")
-    em_line_button = Button(description="+ lines", button_style='danger')
+    galaxy_id_input = Text(value=str(catalog_filtered.iloc[index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID")
+    em_line_button = Button(description="+ lines", button_style='danger', layout=Layout(width='60px'))
+    attention_button = Button(description="Need more attention", button_style='danger')
     em_line_check = False
     
     def toggle_em_line_state(button):
@@ -172,6 +171,24 @@ def interactive_spectrum_viewer(index=0):
         em_line_check = not em_line_check
         button.button_style = "success" if em_line_check else "danger"
         update_viewer()
+
+    def mark_attention(button):
+        catalog_filtered.loc[index, "Redshift"] = -2
+        catalog_filtered.loc[index, "Comments"] = "Uncertain solution, need more investigation"
+        update_viewer()
+
+    def change_galaxy_id(change):
+        nonlocal index
+        try:
+            new_id = change["new"]
+            new_index = catalog_filtered[catalog_filtered["Galaxy"] == new_id].index[0]
+            index = new_index
+            redshift_slider.value = get_Redshift_Mode(index)
+            update_viewer()
+        except (ValueError, IndexError):
+            with output:
+                output.clear_output()
+                print(f"Galaxy ID {change['new']} not found!")
 
     flag_dropdown = Dropdown(options=["", "4", "3", "2", "1", "0", "9"], value=catalog_filtered.iloc[index]["Flag"], description="Flag:")
     comments_box = Textarea(value='', description='Comments:', placeholder='Enter any comments here...', layout=Layout(width='100%', height='50px'))
@@ -188,13 +205,13 @@ def interactive_spectrum_viewer(index=0):
     features_list = VBox([Label("Select features:")] + [checkbox_columns])
     features_list.layout = Layout(border='1px solid lightgrey', padding='1px', width='100%')
 
-    top_widgets = HBox([galaxy_id_input, redshift_slider, em_line_button], layout=Layout(align_items='center', justify_content='center'))
+    top_widgets = HBox([galaxy_id_input, redshift_slider, em_line_button, attention_button], layout=Layout(align_items='center', justify_content='center'))
     left_widgets = VBox([top_widgets, HBox([flag_dropdown, comments_box])], layout=Layout(width='50%', align_items='center', justify_content='center'))
 
     right_widgets = VBox(
         [HBox([prev_button, next_button, save_button], layout=Layout(justify_content='flex-end')),
          features_list],
-        layout=Layout(width='45%', align_items='flex-end')
+        layout=Layout(width='35%', align_items='flex-end')
     )
 
     ui = HBox([left_widgets, right_widgets], layout=Layout(width='100%', justify_content='space-between'))
@@ -281,14 +298,14 @@ def interactive_spectrum_viewer(index=0):
         nonlocal index
         if index < len(catalog_filtered) - 1:
             index += 1
-            redshift_slider.value = get_mode_redshift(index)
+            redshift_slider.value = get_Redshift_Mode(index)
             update_viewer()
 
     def on_prev(_):
         nonlocal index
         if index > 0:
             index -= 1
-            redshift_slider.value = get_mode_redshift(index)
+            redshift_slider.value = get_Redshift_Mode(index)
             update_viewer()
 
     def save_to_csv(_):
@@ -308,10 +325,12 @@ def interactive_spectrum_viewer(index=0):
 
     redshift_slider.observe(on_redshift_change, names="value")
     flag_dropdown.observe(on_flag_change, names="value")
+    galaxy_id_input.observe(change_galaxy_id, names="value")
     next_button.on_click(on_next)
     prev_button.on_click(on_prev)
     save_button.on_click(save_to_csv)
     em_line_button.on_click(toggle_em_line_state)
+    attention_button.on_click(mark_attention)
 
     update_viewer()
 
