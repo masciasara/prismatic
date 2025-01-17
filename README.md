@@ -1,2 +1,2 @@
-# prismatic
-PRISMATIC Redshifting Program
+# PRISMATIC Redshifting Program
+
