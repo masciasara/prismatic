@@ -22,3 +22,10 @@ To install PRISMATIC, ensure you have Python 3.8 or later installed. Then clone 
 git clone https://github.com/your_username/PRISMATIC.git  
 cd PRISMATIC  
 pip install -r requirements.txt
+```
+
+---
+
+## Acknowledgments
+
+PRISMATIC was developed as part of the CAPERS project, with contributions from the JWST community. Special thanks to the developers of related tools and libraries, such as Astropy and SpectralCube.
