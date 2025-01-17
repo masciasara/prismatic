@@ -1,1 +1,15 @@
-ipympl
+astropy==7.0.0
+contourpy==1.3.1
+cycler==0.12.1
+ipykernel @ file:///Users/runner/miniforge3/conda-bld/ipykernel_1719845458456/work
+ipympl==0.9.6
+ipython @ file:///home/conda/feedstock_root/build_artifacts/ipython_1734788142186/work
+ipywidgets @ file:///home/conda/feedstock_root/build_artifacts/ipywidgets_1733493556527/work
+jupyter @ file:///home/conda/feedstock_root/build_artifacts/jupyter_1733818543322/work
+jupyterlab @ file:///home/conda/feedstock_root/build_artifacts/jupyterlab_1734539168769/work
+jupyterlab_server @ file:///home/conda/feedstock_root/build_artifacts/jupyterlab_server_1733599573484/work
+matplotlib==3.10.0
+nbformat @ file:///home/conda/feedstock_root/build_artifacts/nbformat_1733402752141/work
+numpy==2.2.1
+pandas==2.2.3
+scipy==1.15.1
