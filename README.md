@@ -28,4 +28,4 @@ pip install -r requirements.txt
 
 ## Acknowledgments
 
-PRISMATIC was developed as part of the CAPERS project, with contributions from the JWST community. Special thanks to the developers of related tools and libraries, such as Astropy and SpectralCube.
+PRISMATIC was developed as part of the CAPERS project, with contributions from the JWST community. 
