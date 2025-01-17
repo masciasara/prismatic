@@ -24,6 +24,13 @@ cd PRISMATIC
 pip install -r requirements.txt
 ```
 
+# PRISMATIC Analysis Notebook
+
+This repository contains the interactive notebook for analyzing JWST NIRSpec prism spectra.
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/your_username/your_repository/branch_name?filepath=prismatic_analysis.ipynb)
+
+Click the Binder badge above to launch the notebook interactively.
 ---
 
 ## Acknowledgments
