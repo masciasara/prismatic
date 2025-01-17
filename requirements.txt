@@ -1,9 +1,9 @@
 astropy
-contourpy 
-cycler 
-ipympl 
-matplotlib 
-numpy 
-pandas 
-scipy 
-gdown 
+contourpy
+cycler
+ipympl
+matplotlib
+numpy
+pandas
+scipy
+gdown
