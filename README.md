@@ -17,7 +17,7 @@
 
 This repository contains the interactive notebook for analyzing JWST NIRSpec prism spectra.
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/your_username/your_repository/branch_name?filepath=prismatic_analysis.ipynb)
+[[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/your_username/your_repository/branch_name?filepath=prismatic_analysis.ipynb)](https://mybinder.org/v2/gh/masciasara/prismatic/HEAD?labpath=https%3A%2F%2Fgithub.com%2Fmasciasara%2Fprismatic%2Fblob%2Fmain%2FPRISMATIC.ipynb)
 
 Click the Binder badge above to launch the notebook interactively.
 ---
