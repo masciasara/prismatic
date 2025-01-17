@@ -19,7 +19,8 @@
 git clone https://github.com/your_username/PRISMATIC.git  
 cd PRISMATIC  
 pip install -r requirements.txt
-jupyter notebook PRISMATIC.ipynb```
+jupyter notebook PRISMATIC.ipynb
+```
 
 ---
 
