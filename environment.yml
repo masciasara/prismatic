@@ -11,3 +11,6 @@ dependencies:
   - scipy
   - gdown
   - pip
+  - contourpy
+  - cycler
+  - ipympl
