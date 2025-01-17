@@ -94,7 +94,7 @@ def main():
 
     msaexp = pd.read_csv(f'solutions/capers_{pointing_low}_msaexp_zcat.csv')
 
-    lime = pd.read_csv('solutions/CAPERS_UDS_V01_ASPECT_redshifts_v0.1.txt', sep=r'\s+')
+    lime = pd.read_csv('solutions/CAPERS_UDS_V01_ASPECT_redshifts_v2.csv')
     ID_lime = lime['file']
 
     for ids in range(len(ID_lime)):
