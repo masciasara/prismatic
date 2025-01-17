@@ -13,3 +13,4 @@ nbformat @ file:///home/conda/feedstock_root/build_artifacts/nbformat_1733402752
 numpy==2.2.1
 pandas==2.2.3
 scipy==1.15.1
+gdown==5.2.0
