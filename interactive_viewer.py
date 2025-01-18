@@ -180,8 +180,8 @@ def interactive_spectrum_viewer(index=0):
     def change_galaxy_id(change):
         nonlocal index
         try:
-            new_id = int(change["new"])
-            new_index = catalog_filtered[catalog_filtered["Galaxy"] == new_id].index[0]
+            new_id = change["new"]
+            new_index = catalog_filtered[catalog_filtered["Galaxy"] == new_id].index[index]
             index = new_index
             redshift_slider.value = get_Redshift_Mode(index)
             update_viewer()
