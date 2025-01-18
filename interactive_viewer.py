@@ -177,19 +177,7 @@ def interactive_spectrum_viewer(index=0):
         catalog_filtered.loc[index, "Comments"] = "Uncertain solution, flagged for review"
         update_viewer()
 
-    '''def change_galaxy_id(change):
-        nonlocal index
-        try:
-            new_id = change["new"]
-            new_index = catalog_filtered[catalog_filtered["Galaxy"] == new_id].index[0]
-            index = new_index
-            redshift_slider.value = get_Redshift_Mode(index)
-            update_viewer()
-        except (ValueError, IndexError):
-            with output:
-                output.clear_output()
-                print(f"Galaxy ID {change['new']} not found!")'''
-
+   
     flag_dropdown = Dropdown(options=["", "4", "3", "2", "1", "0", "9"], value=catalog_filtered.iloc[index]["Flag"], description="Flag:")
     comments_box = Textarea(value='', description='Comments:', placeholder='Enter any comments here...', layout=Layout(width='100%', height='50px'))
 
@@ -325,7 +313,6 @@ def interactive_spectrum_viewer(index=0):
 
     redshift_slider.observe(on_redshift_change, names="value")
     flag_dropdown.observe(on_flag_change, names="value")
-    #galaxy_id_input.observe(change_galaxy_id, names="value")
     next_button.on_click(on_next)
     prev_button.on_click(on_prev)
     save_button.on_click(save_to_csv)
