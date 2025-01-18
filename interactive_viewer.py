@@ -163,7 +163,7 @@ def interactive_spectrum_viewer(index=0):
     redshift_slider.style.handle_color = 'lightblue'
     galaxy_id_input = Text(value=str(catalog_filtered.iloc[index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID")
     em_line_button = Button(description="+ lines", button_style='danger', layout=Layout(width='60px'))
-    attention_button = Button(description="Need more attention", button_style='danger')
+    attention_button = Button(description="Review needed", button_style='danger')
     em_line_check = False
     
     def toggle_em_line_state(button):
@@ -174,10 +174,10 @@ def interactive_spectrum_viewer(index=0):
 
     def mark_attention(button):
         catalog_filtered.loc[index, "Redshift"] = -2
-        catalog_filtered.loc[index, "Comments"] = "Uncertain solution, need more investigation"
+        catalog_filtered.loc[index, "Comments"] = "Uncertain solution, flagged for review"
         update_viewer()
 
-    def change_galaxy_id(change):
+    '''def change_galaxy_id(change):
         nonlocal index
         try:
             new_id = change["new"]
@@ -188,7 +188,7 @@ def interactive_spectrum_viewer(index=0):
         except (ValueError, IndexError):
             with output:
                 output.clear_output()
-                print(f"Galaxy ID {change['new']} not found!")
+                print(f"Galaxy ID {change['new']} not found!")'''
 
     flag_dropdown = Dropdown(options=["", "4", "3", "2", "1", "0", "9"], value=catalog_filtered.iloc[index]["Flag"], description="Flag:")
     comments_box = Textarea(value='', description='Comments:', placeholder='Enter any comments here...', layout=Layout(width='100%', height='50px'))
