@@ -1,3 +1,152 @@
+import os
+import re
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from astropy.io import fits
+from ipywidgets import FloatSlider, Text, Dropdown, Textarea, Button, Checkbox, VBox, HBox, Label, Layout, Output, HTML
+from scipy.stats import mode as scipy_mode
+
+emission_lines = {"Lyα": 1215.67,
+                  "HeII": 1640.42, 
+                  "CIV": 1550.,
+                  "CIII": 1909.,
+                  "[OII](1)": 3727.104102,
+                  "[OII](2)": 3729.887902,
+                  "[NeIII]": 3869.873137,
+                  "Hδ": 4102.922122,
+                  "Hγ": 4341.719762,
+                  "Hβ": 4862.73153,
+                  "[OIII](1)": 4960.337588,
+                  "[OIII](2)": 5008.283371,
+                  "Hα": 6564.706817,
+                  "[SII](1)": 6718.371995,
+                  "[SII](2)": 6732.746127,
+                  "[SIII]": 9533.841463,
+                  "Paδ": 10052.25852,
+                  "HeI": 10833.45512,
+                  "Paγ": 10941.23211,
+                  "[FeII]": 12570.38253,
+                  "Paβ": 12821.7568,
+                  "Paα": 18756.36916,
+                  "Brβ": 26259.07141,
+                  "Pfundβ": 37406.11053,
+                  "Brα": 40534.349,
+                  "Pfundα": 46551.12201
+                 }
+
+additional_emission_lines = {"OIII]": 1660.809,
+                             "OIII]": 1666.15,
+                             "MgII]": 2796.33262,
+                             "MgII]": 2803.511683,
+                             "[NeIII]": 3968.651338,
+                             "[SIII]": 6313.875704,
+                             "[NII]": 6549.933569,
+                             "[NII]": 6585.353753,
+                             "[SIII]": 9071.20845,
+                             "Brδ": 19451.17493,
+                             "Brγ": 21661.53048
+                            }
+
+def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
+    global catalog_filtered
+
+    codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES"]
+
+    with fits.open(file) as hdul:
+        data = hdul[1].data
+        wavelength = data['WAVELENGTH'] * 10**4
+        flux = data['FLUX']
+        noise = data['FLUX_ERROR']
+
+    with fits.open(file_2d) as hdul1:
+        spectrum_2d = hdul1['SCI'].data
+
+    wave_new = np.concatenate([wavelength, [wavelength[-1]+1]])
+    y_pixels = np.arange(spectrum_2d.shape[0]+1)
+    X, Y = np.meshgrid(wave_new, y_pixels)
+    flux2d_not_nan = spectrum_2d[~np.isnan(spectrum_2d)]
+    vmin = np.percentile(flux2d_not_nan, 15)
+    vmax = np.percentile(flux2d_not_nan, 95)
+    norm = Normalize(vmin=vmin, vmax=vmax)
+
+    redshifts_dict = {code: {"redshift": catalog_filtered.loc[catalog_filtered['Galaxy'] == galaxy_id, f"{code}_Redshift"].iloc[0], "checked": c_values[idx]} for idx, code in enumerate(codes)}
+
+    fig = plt.figure(figsize=(14, 7))
+    gs = plt.GridSpec(2, 2, width_ratios=[2.5, 0.3], height_ratios=[0.5, 1])
+
+    ax2d = fig.add_subplot(gs[0, 0])
+    ax2d.set_title(f"Galaxy ID: {galaxy_id}", fontsize=12)
+    pcm = ax2d.pcolormesh(X, Y, spectrum_2d, cmap='inferno', vmin=vmin, vmax=vmax, shading='auto')
+
+    ax_hist = fig.add_subplot(gs[0, 1])
+    pixel_values = spectrum_2d.flatten()
+    pixel_values = pixel_values[~np.isnan(pixel_values)]
+    cmap = plt.cm.inferno
+    hist, bins = np.histogram(pixel_values, bins=20, range=(vmin, vmax))
+
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
+    colors = cmap(norm(bin_centers))
+
+    for left, right, h, color in zip(bins[:-1], bins[1:], hist, colors):
+        ax_hist.barh(y=0.5 * (left + right), width=h, height=right - left, color=color, edgecolor='none')
+
+    ax_hist.axis('off')
+    ax_hist.set_ylim([vmin, vmax])
+    ax_hist.set_xlim([0, 2])
+    ax_hist.set_xlabel('Pixel Count')
+    ax_hist.yaxis.tick_right()
+    ax_hist.yaxis.set_label_position("right")
+
+    ax1d = fig.add_subplot(gs[1, 0])
+    ax1d.plot(wavelength, flux, c='#003049', label=f"z = {redshift:.3f}")
+    ax1d.errorbar(wavelength, flux, yerr=noise, c='#669bbc', fmt='none', alpha=0.4)
+
+    colors = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600']
+
+    for idx, (code, data) in enumerate(redshifts_dict.items()):
+        if not data["checked"]:
+            continue
+        z = data["redshift"]
+        color = colors[idx % len(colors)]
+        for line, rest_wavelength in emission_lines.items():
+            observed_line = rest_wavelength * (1 + z)
+            if np.nanmin(wavelength) < observed_line < np.nanmax(wavelength):
+                ax1d.axvline(observed_line, color=color, ls=":", alpha=0.7, lw=0.8)
+                ax1d.text(observed_line + 5, 0.85 * np.nanmax(flux),
+                          f"{line}", color=color, rotation=90,
+                          verticalalignment="center", horizontalalignment="left", fontsize=6)
+
+    for line, rest_wavelength in emission_lines.items():
+        observed_line = rest_wavelength * (1 + redshift)
+        if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
+            ax1d.axvline(observed_line, color='k', ls=':', alpha=0.7, lw=0.8)
+            ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='k',
+                      rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)
+    
+    if em_line_check:
+        for line, rest_wavelength in additional_emission_lines.items():
+            observed_line = rest_wavelength * (1 + redshift)
+            if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
+                ax1d.axvline(observed_line, color='grey', ls=':', alpha=0.7, lw=0.8)
+                ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='grey',
+                          rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)        
+
+    ax1d.set_xlabel("Wavelength [Å]")
+    ax1d.set_ylabel("Flux [Jy]")
+    ax1d.legend(loc="upper right", fontsize="small", ncol=2)
+    ax1d.grid(c='lightgrey', ls=':')
+
+    ax2d.sharex(ax1d)
+    plt.tight_layout()
+    plt.show()
+
+    return ax_hist, pcm, fig
+
+# Create an output widget
+output = Output()
+
 def interactive_spectrum_viewer(index=0):
     """
     View spectra interactively following the catalog order.
@@ -12,9 +161,9 @@ def interactive_spectrum_viewer(index=0):
     
     redshift_slider = FloatSlider(value=get_Redshift_Mode(index), min=0, max=20, step=0.001, description="Redshift:")
     redshift_slider.style.handle_color = 'lightblue'
-    galaxy_id_input = Text(value=str(catalog_filtered.iloc[index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID", disabled=True)
+    galaxy_id_input = Text(value=str(catalog_filtered.iloc[index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID")
     em_line_button = Button(description="+ lines", button_style='danger', layout=Layout(width='60px'))
-    attention_button = Button(description="Review needed", button_style='danger')
+    attention_button = Button(description="Need more attention", button_style='danger')
     em_line_check = False
     
     def toggle_em_line_state(button):
@@ -25,8 +174,21 @@ def interactive_spectrum_viewer(index=0):
 
     def mark_attention(button):
         catalog_filtered.loc[index, "Redshift"] = -2
-        catalog_filtered.loc[index, "Comments"] = "Uncertain solution, flagged for review"
+        catalog_filtered.loc[index, "Comments"] = "Uncertain solution, need more investigation"
         update_viewer()
+
+    def change_galaxy_id(change):
+        nonlocal index
+        try:
+            new_id = change["new"]
+            new_index = catalog_filtered[catalog_filtered["Galaxy"] == new_id].index[0]
+            index = new_index
+            redshift_slider.value = get_Redshift_Mode(index)
+            update_viewer()
+        except (ValueError, IndexError):
+            with output:
+                output.clear_output()
+                print(f"Galaxy ID {change['new']} not found!")
 
     flag_dropdown = Dropdown(options=["", "4", "3", "2", "1", "0", "9"], value=catalog_filtered.iloc[index]["Flag"], description="Flag:")
     comments_box = Textarea(value='', description='Comments:', placeholder='Enter any comments here...', layout=Layout(width='100%', height='50px'))
@@ -83,11 +245,13 @@ def interactive_spectrum_viewer(index=0):
         except:
             pass
 
+        # Now, create a list of HBox to pair each checkbox with its colored description
         styled_checkboxes = [
             HBox([HTML(f'<span style="color: {color};">{code} ({round(catalog_filtered[f"{code}_Redshift"].iloc[index], 2)})</span>'), checkbox])
             for code, color, checkbox in zip(codes, colorlist, checkboxes_redshift)
         ]
 
+        # Create the grid layout for the checkboxes
         left_column = VBox(styled_checkboxes[:1])
         middle_1column = VBox(styled_checkboxes[1:2])
         middle_2column = VBox(styled_checkboxes[2:3])
@@ -161,6 +325,7 @@ def interactive_spectrum_viewer(index=0):
 
     redshift_slider.observe(on_redshift_change, names="value")
     flag_dropdown.observe(on_flag_change, names="value")
+    galaxy_id_input.observe(change_galaxy_id, names="value")
     next_button.on_click(on_next)
     prev_button.on_click(on_prev)
     save_button.on_click(save_to_csv)
