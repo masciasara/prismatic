@@ -68,7 +68,7 @@
             <strong>Comments Section:</strong>
             <p>Users can leave additional comments or notes for each source.</p>
         </li>
-      <li> <strong> Remember to save each source's information using the <code>Save to csv</code> button before moving to the next one.</li>
+      <li> <strong> Remember to save each source's information using the <code>Save to CSV</code> button before moving to the next one.</li>
 </strong></li>
     </ol>
     
