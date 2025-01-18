@@ -325,7 +325,7 @@ def interactive_spectrum_viewer(index=0):
 
     redshift_slider.observe(on_redshift_change, names="value")
     flag_dropdown.observe(on_flag_change, names="value")
-    galaxy_id_input.observe(change_galaxy_id, names="value")
+    #galaxy_id_input.observe(change_galaxy_id, names="value")
     next_button.on_click(on_next)
     prev_button.on_click(on_prev)
     save_button.on_click(save_to_csv)
