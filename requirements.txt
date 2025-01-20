@@ -18,3 +18,4 @@ setuptools
 tzdata
 wheel
 zstandard
+ipywidgets
