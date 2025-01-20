@@ -113,7 +113,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
         for line, rest_wavelength in emission_lines.items():
             observed_line = rest_wavelength * (1 + z)
             if np.nanmin(wavelength) < observed_line < np.nanmax(wavelength):
-                ax1d.axvline(observed_line, color=color, ls=":", alpha=0.7, lw=0.8)
+                ax1d.axvline(observed_line, color=color, ls=":", alpha=0.7, lw=1)
                 ax1d.text(observed_line + 5, 0.85 * np.nanmax(flux),
                           f"{line}", color=color, rotation=90,
                           verticalalignment="center", horizontalalignment="left", fontsize=6)
@@ -121,7 +121,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
     for line, rest_wavelength in emission_lines.items():
         observed_line = rest_wavelength * (1 + redshift)
         if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
-            ax1d.axvline(observed_line, color='k', ls=':', alpha=0.7, lw=0.8)
+            ax1d.axvline(observed_line, color='k', ls=':', alpha=0.7, lw=1)
             ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='k',
                       rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)
     
@@ -129,7 +129,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
         for line, rest_wavelength in additional_emission_lines.items():
             observed_line = rest_wavelength * (1 + redshift)
             if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
-                ax1d.axvline(observed_line, color='grey', ls=':', alpha=0.7, lw=0.8)
+                ax1d.axvline(observed_line, color='grey', ls=':', alpha=0.7, lw=1)
                 ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='grey',
                           rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)        
 
