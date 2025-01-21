@@ -83,6 +83,7 @@ def main():
         file2d.append(files['s2d'])
 
     ## redshift catalogs
+    
     BAGPIPES = pd.read_csv(f'solutions/capers_UDS_bagpipes_{pointing}.cat', sep=r'\s+')
     AT = pd.read_csv(f'solutions/CAPERS_{pointing}_zspec.txt', sep=',')
     ID_AT = AT['file']
@@ -114,6 +115,9 @@ def main():
         if match:
             extracted_number = match.group(1)
             file_MARZ[ids] = extracted_number
+
+    CIGALE = pd.read_csv('solutions/CAPERS_v0.1_cigale_redshift.csv', sep = ';')
+    CIGALE_ID = CIGALE['id']
     
     galaxies = np.array(source_ids)
     redshift_bp = np.zeros(len(galaxies))
@@ -123,6 +127,7 @@ def main():
     redshift_marz = np.zeros(len(galaxies))
     redshifts_mode = np.zeros(len(galaxies))
     redshifts = np.zeros(len(galaxies))
+    redshift_cigale = np.zeros(len(galaxies))
 
     for i in range(len(galaxies)):
         for j in range(len(BAGPIPES['ID'])):
@@ -149,6 +154,12 @@ def main():
             if float(ID_lime[mm]) == float(galaxies[i]):
                 redshift_lime[i] = lime['z_manual'][mm]
 
+    for i in range(len(galaxies)):
+        for kk in range(len(CIGALE_ID)):
+            if float(CIGALE_ID[kk]) == float(galaxies[i]):
+                redshift_cigale[i] = CIGALE['best.universe.redshift'][kk]
+
+
     spectra_files_1d = np.array(file1d)
     spectra_files_2d = np.array(file2d)
 
@@ -173,7 +184,7 @@ def main():
         "MSAEXP_Redshift": redshift_msaexp,
         "LiMe_Redshift": redshift_lime,
         "MARZ_Redshift": redshift_marz,
-        "Cigale_Redshift": 0*np.ones(len(redshifts)),
+        "Cigale_Redshift": redshift_cigale,
         "BAGPIPES_Redshift": redshift_bp,
         "Redshift_Mode": redshifts_mode,
         "[OIII]+Hβ": [""]*len(galaxies),
