@@ -283,27 +283,33 @@ def interactive_spectrum_viewer(index=0):
 
             ax_hist.callbacks.connect('ylim_changed', on_hist_zoom)
 
+    def save_current_state():
+          catalog_filtered.loc[index, "Comments"] = comments_box.value
+          catalog_filtered.loc[index, "Flag"] = flag_dropdown.value
+          for cb, feature in zip(checkboxes, features):
+              catalog_filtered.loc[index, feature] = 1 if cb.value else 0
+          catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
+          with output:
+              print(f"Current state saved to '{new_catalog_name}'.")
+
     def on_next(_):
-        nonlocal index
-        if index < len(catalog_filtered) - 1:
-            index += 1
-            redshift_slider.value = get_Redshift_Mode(index)
-            update_viewer()
+          nonlocal index
+          if index < len(catalog_filtered) - 1:
+              save_current_state()  # Save the current state before moving to the next spectrum
+              index += 1
+              redshift_slider.value = get_Redshift_Mode(index)
+              update_viewer()
 
     def on_prev(_):
-        nonlocal index
-        if index > 0:
-            index -= 1
-            redshift_slider.value = get_Redshift_Mode(index)
-            update_viewer()
+          nonlocal index
+          if index > 0:
+              save_current_state()  # Save the current state before moving to the previous spectrum
+              index -= 1
+              redshift_slider.value = get_Redshift_Mode(index)
+              update_viewer()
 
     def save_to_csv(_):
-        catalog_filtered.loc[index, "Comments"] = comments_box.value
-        for cb, feature in zip(checkboxes, features):
-            catalog_filtered.loc[index, feature] = 1 if cb.value else 0
-        catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
-        with output:
-            print(f"Catalog saved to '{new_catalog_name}'.")
+          save_current_state() 
 
     def on_redshift_change(change):
         catalog_filtered.loc[index, "Redshift"] = change["new"]
