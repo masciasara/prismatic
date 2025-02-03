@@ -19,3 +19,5 @@ tzdata
 wheel
 zstandard
 ipywidgets
+jupyter-full-width
+jupyter_contrib_nbextensions
