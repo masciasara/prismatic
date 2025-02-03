@@ -186,10 +186,10 @@ def interactive_spectrum_viewer(index=0):
     prev_button = Button(description="Previous", button_style='primary')
     save_button = Button(description="Save to CSV", button_style='warning')
 
-    features = ["[OIII]+Hβ", "Hα", "Lyα", "Lyman Break", "Balmer Break"]
+    features = ["[OIII]+Hβ", "Hα", "Lyα", "Paα", "Lyman Break", "Balmer Break"]
     checkboxes = [Checkbox(value=False, description=feature) for feature in features]
-    left_column = VBox(checkboxes[:2])
-    right_column = VBox(checkboxes[2:])
+    left_column = VBox(checkboxes[:3])
+    right_column = VBox(checkboxes[3:])
     checkbox_columns = HBox([left_column, right_column])
     features_list = VBox([Label("Select features:")] + [checkbox_columns])
     features_list.layout = Layout(border='1px solid lightgrey', padding='1px', width='100%')
