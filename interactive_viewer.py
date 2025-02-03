@@ -50,6 +50,7 @@ additional_emission_lines = {"OIII]": 1660.809,
                             }
 
 def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
+    plt.close("all")
     global catalog_filtered
 
     codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES"]
