@@ -55,14 +55,29 @@ def main():
     # Direct download URL of the Google Drive file
     google_drive_url = "https://drive.google.com/uc?id=1nLwEX3edQI9ktHof9eAsH0z7lvUYFz7i"
     output_folder = "data"
-    
+    version_file = os.path.join(output_folder, "version.txt")
+    expected_version = "v0.1"
+
     # Ensure the output folder exists
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-    
-    # Download and extract the zip file
-    download_and_extract_zip(google_drive_url, output_folder)
-    
+
+    # Check if the data has already been downloaded and versions match
+    if os.path.exists(version_file):
+        with open(version_file, 'r') as f:
+            current_version = f.read().strip()
+        if current_version == expected_version:
+            print("Data is already downloaded and up-to-date.")
+        else:
+            print("Data version mismatch. Downloading the latest version.")
+            download_and_extract_zip(google_drive_url, output_folder)
+            with open(version_file, 'w') as f:
+                f.write(expected_version)
+    else:
+        download_and_extract_zip(google_drive_url, output_folder)
+        with open(version_file, 'w') as f:
+            f.write(expected_version)
+
     folder_path = output_folder  # Use the extracted folder as the data source
 
     print("Choose a pointing (1,2,3,5):")
@@ -190,6 +205,7 @@ def main():
         "[OIII]+Hβ": [""]*len(galaxies),
         "Hα": [""]*len(galaxies),
         "Lyα": [""]*len(galaxies),
+	"Paα": [""]*len(galaxies),
         "Lyman Break": [""]*len(galaxies),
         "Balmer Break": [""]*len(galaxies),
         "Comments": [""]*len(galaxies)
