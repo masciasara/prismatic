@@ -284,13 +284,15 @@ def interactive_spectrum_viewer(index=0):
             ax_hist.callbacks.connect('ylim_changed', on_hist_zoom)
 
     def save_current_state():
-          catalog_filtered.loc[index, "Comments"] = comments_box.value
-          catalog_filtered.loc[index, "Flag"] = flag_dropdown.value
-          for cb, feature in zip(checkboxes, features):
-              catalog_filtered.loc[index, feature] = 1 if cb.value else 0
-          catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
-          with output:
-              print(f"Current state saved to '{new_catalog_name}'.")
+        catalog_filtered.loc[index, "Comments"] = comments_box.value
+        catalog_filtered.loc[index, "Flag"] = flag_dropdown.value
+        if not flag_dropdown.value:
+            catalog_filtered.loc[index, "Redshift"] = -99  # Set redshift to -99 if no flag value
+        for cb, feature in zip(checkboxes, features):
+            catalog_filtered.loc[index, feature] = 1 if cb.value else 0
+        catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
+        with output:
+            print(f"Current state saved to '{new_catalog_name}'.")
 
     def on_next(_):
           nonlocal index
