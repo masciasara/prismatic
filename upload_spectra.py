@@ -95,7 +95,7 @@ def read_redshift_catalogs(pointing):
             extracted_number = match.group(1)
             file_MARZ[ids] = extracted_number
 
-    CIGALE = pd.read_csv('solutions/CAPERS_v0.1_cigale_redshift.csv', sep = ';')
+    CIGALE = pd.read_csv('solutions/CAPERS_v0.1_cigale_redshift_with_photometry.csv')
     CIGALE_ID = CIGALE['id']
 
     return BAGPIPES, AT, ID_AT, msaexp, lime, ID_lime, MARZ, file_MARZ, CIGALE, CIGALE_ID
