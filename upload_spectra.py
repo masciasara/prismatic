@@ -243,16 +243,16 @@ def main():
     catalog["Redshift"] = catalog["Redshift"].apply(lambda x: 0 if pd.isna(x) or x <= 0 else x)
     catalog_filtered = catalog[catalog["1d_Spectrum"].notnull() & (catalog["1d_Spectrum"] != "")]
     
-    catalog_sorted = catalog_filtered.sort_values(by="Galaxy").reset_index(drop=True)
+    catalog_sorted1 = catalog_filtered.sort_values(by="Galaxy").reset_index(drop=True)
     
     visualize = input("Do you want to visualize sources within a specific ID range or a specific pointing? (range/pointing/no): ").strip().lower()
     if visualize == 'range':
         min_id = int(input("Enter the minimum ID: "))
         max_id = int(input("Enter the maximum ID: "))
-        catalog_sorted = catalog_sorted[(catalog_sorted['Galaxy'].astype(int) >= min_id) & (catalog_sorted['Galaxy'].astype(int) <= max_id)]
+        catalog_sorted = catalog_sorted1[(catalog_sorted1['Galaxy'].astype(int) >= min_id) & (catalog_sorted1['Galaxy'].astype(int) <= max_id)]
     elif visualize == 'pointing':
         chosen_pointing = input("Enter the pointing (P1, P2, P3, P5): ").strip().upper()
-        catalog_sorted = catalog_sorted[catalog_sorted['Pointing'] == chosen_pointing]
+        catalog_sorted = catalog_sorted1[catalog_sorted1['Pointing'] == chosen_pointing]
 
     catalog_name = 'initial_catalog_total.csv'
     catalog_sorted.to_csv(catalog_name, index=False)
