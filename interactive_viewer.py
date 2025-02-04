@@ -8,46 +8,9 @@ from astropy.io import fits
 from ipywidgets import FloatSlider, Text, Dropdown, Textarea, Button, Checkbox, VBox, HBox, Label, Layout, Output, HTML
 from scipy.stats import mode as scipy_mode
 
-emission_lines = {"Lyα": 1215.67,
-                  "HeII": 1640.42, 
-                  "CIV": 1550.,
-                  "CIII": 1909.,
-                  "[OII](1)": 3727.104102,
-                  "[OII](2)": 3729.887902,
-                  "[NeIII]": 3869.873137,
-                  "Hδ": 4102.922122,
-                  "Hγ": 4341.719762,
-                  "Hβ": 4862.73153,
-                  "[OIII](1)": 4960.337588,
-                  "[OIII](2)": 5008.283371,
-                  "Hα": 6564.706817,
-                  "[SII](1)": 6718.371995,
-                  "[SII](2)": 6732.746127,
-                  "[SIII]": 9533.841463,
-                  "Paδ": 10052.25852,
-                  "HeI": 10833.45512,
-                  "Paγ": 10941.23211,
-                  "[FeII]": 12570.38253,
-                  "Paβ": 12821.7568,
-                  "Paα": 18756.36916,
-                  "Brβ": 26259.07141,
-                  "Pfundβ": 37406.11053,
-                  "Brα": 40534.349,
-                  "Pfundα": 46551.12201
-                 }
-
-additional_emission_lines = {"OIII]": 1660.809,
-                             "OIII]": 1666.15,
-                             "MgII]": 2796.33262,
-                             "MgII]": 2803.511683,
-                             "[NeIII]": 3968.651338,
-                             "[SIII]": 6313.875704,
-                             "[NII]": 6549.933569,
-                             "[NII]": 6585.353753,
-                             "[SIII]": 9071.20845,
-                             "Brδ": 19451.17493,
-                             "Brγ": 21661.53048
-                            }
+# Emission lines dictionaries
+emission_lines = {"Lyα": 1215.67, "HeII": 1640.42, "CIV": 1550., "CIII": 1909., "[OII](1)": 3727.104102, "[OII](2)": 3729.887902, "[NeIII]": 3869.873137, "Hδ": 4102.922122, "Hγ": 4341.719762, "Hβ": 4862.73153, "[OIII](1)": 4960.337588, "[OIII](2)": 5008.283371, "Hα": 6564.706817, "[SII](1)": 6718.371995, "[SII](2)": 6732.746127, "[SIII]": 9533.841463, "Paδ": 10052.25852, "HeI": 10833.45512, "Paγ": 10941.23211, "[FeII]": 12570.38253, "Paβ": 12821.7568, "Paα": 18756.36916, "Brβ": 26259.07141, "Pfundβ": 37406.11053, "Brα": 40534.349, "Pfundα": 46551.12201}
+additional_emission_lines = {"OIII]": 1660.809, "OIII]": 1666.15, "MgII]": 2796.33262, "MgII]": 2803.511683, "[NeIII]": 3968.651338, "[SIII]": 6313.875704, "[NII]": 6549.933569, "[NII]": 6585.353753, "[SIII]": 9071.20845, "Brδ": 19451.17493, "Brγ": 21661.53048}
 
 def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
     plt.close("all")
@@ -148,7 +111,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
 # Create an output widget
 output = Output()
 
-def interactive_spectrum_viewer(index=0):
+def interactive_spectrum_viewer(galaxy_index=0):
     """
     View spectra interactively following the catalog order.
     """
@@ -160,9 +123,9 @@ def interactive_spectrum_viewer(index=0):
         rounded_values = np.array([round(val, 2) for val in z_values])
         return float(scipy_mode(rounded_values)[0])
     
-    redshift_slider = FloatSlider(value=get_Redshift_Mode(index), min=0, max=20, step=0.001, description="Redshift:")
+    redshift_slider = FloatSlider(value=get_Redshift_Mode(galaxy_index), min=0, max=20, step=0.001, description="Redshift:")
     redshift_slider.style.handle_color = 'lightblue'
-    galaxy_id_input = Text(value=str(catalog_filtered.iloc[index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID")
+    galaxy_id_input = Text(value=str(catalog_filtered.iloc[galaxy_index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID")
     em_line_button = Button(description="+ lines", button_style='danger', layout=Layout(width='60px'))
     attention_button = Button(description="Review needed", button_style='danger')
     em_line_check = False
@@ -174,13 +137,14 @@ def interactive_spectrum_viewer(index=0):
         update_viewer()
 
     def mark_attention(button):
-        catalog_filtered.loc[index, "Redshift"] = -2
-        catalog_filtered.loc[index, "Comments"] = "Uncertain solution, flagged for review"
+        flag_dropdown.value = "0"; catalog_filtered.loc[catalog_filtered.index[galaxy_index], "Redshift"] = -2 
+        comments_box.value = "Uncertain solution, flagged for review"
+        catalog_filtered.loc[catalog_filtered.index[galaxy_index], "Comments"] = comments_box.value
         update_viewer()
 
    
-    flag_dropdown = Dropdown(options=["", "4", "3", "2", "1", "0", "9"], value=catalog_filtered.iloc[index]["Flag"], description="Flag:")
-    comments_box = Textarea(value='', description='Comments:', placeholder='Enter any comments here...', layout=Layout(width='100%', height='50px'))
+    flag_dropdown = Dropdown(options=["", "4", "3", "2", "1", "0", "9"], value=catalog_filtered.iloc[galaxy_index]["Flag"], description="Flag:")
+    comments_box = Textarea(value=catalog_filtered.iloc[galaxy_index]["Comments"], description='Comments:', placeholder='Enter any comments here...', layout=Layout(width='100%', height='50px'))
 
     next_button = Button(description="Next", button_style='primary')
     prev_button = Button(description="Previous", button_style='primary')
@@ -210,7 +174,7 @@ def interactive_spectrum_viewer(index=0):
         """
         Update the spectrum viewer for the current source.
         """
-        galaxy = catalog_filtered.iloc[index]
+        galaxy = catalog_filtered.iloc[galaxy_index]
         file = galaxy["1d_Spectrum"]
         file_2d = galaxy["2d_Spectrum"]
         redshift = redshift_slider.value
@@ -223,7 +187,7 @@ def interactive_spectrum_viewer(index=0):
         galaxy_id_input.value = str(galaxy_id)
         
         for cb, feature in zip(checkboxes, features):
-            cb.value = catalog_filtered.iloc[index][feature] == 1
+            cb.value = catalog_filtered.iloc[galaxy_index][feature] == 1
 
         colorlist = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600']
         checkboxes_redshift = [Checkbox(value=False, description='', style={'description_width': 'initial'}, layout={'width': 'auto'}) for _ in codes]
@@ -236,7 +200,7 @@ def interactive_spectrum_viewer(index=0):
 
         # Now, create a list of HBox to pair each checkbox with its colored description
         styled_checkboxes = [
-            HBox([HTML(f'<span style="color: {color};">{code} ({round(catalog_filtered[f"{code}_Redshift"].iloc[index], 2)})</span>'), checkbox])
+            HBox([HTML(f'<span style="color: {color};">{code} ({round(catalog_filtered[f"{code}_Redshift"].iloc[galaxy_index], 2)})</span>'), checkbox])
             for code, color, checkbox in zip(codes, colorlist, checkboxes_redshift)
         ]
 
@@ -284,41 +248,48 @@ def interactive_spectrum_viewer(index=0):
             ax_hist.callbacks.connect('ylim_changed', on_hist_zoom)
 
     def save_current_state():
-        catalog_filtered.loc[index, "Comments"] = comments_box.value
-        catalog_filtered.loc[index, "Flag"] = flag_dropdown.value
+        galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
+        row_index = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()[0]
+        
+        catalog_filtered.loc[row_index, "Comments"] = comments_box.value
+        catalog_filtered.loc[row_index, "Flag"] = flag_dropdown.value
         if not flag_dropdown.value:
-            catalog_filtered.loc[index, "Redshift"] = -99  # Set redshift to -99 if no flag value
+            catalog_filtered.loc[row_index, "Redshift"] = -99  # Set redshift to -99 if no flag value
         for cb, feature in zip(checkboxes, features):
-            catalog_filtered.loc[index, feature] = 1 if cb.value else 0
+            catalog_filtered.loc[row_index, feature] = 1 if cb.value else 0
         catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
         with output:
             print(f"Current state saved to '{new_catalog_name}'.")
 
     def on_next(_):
-          nonlocal index
-          if index < len(catalog_filtered) - 1:
-              save_current_state()  # Save the current state before moving to the next spectrum
-              index += 1
-              redshift_slider.value = get_Redshift_Mode(index)
-              update_viewer()
+        nonlocal galaxy_index
+        if galaxy_index < len(catalog_filtered) - 1:
+            save_current_state()  # Save the current state before moving to the next spectrum
+            galaxy_index += 1
+            redshift_slider.value = get_Redshift_Mode(galaxy_index)
+            update_viewer()
 
     def on_prev(_):
-          nonlocal index
-          if index > 0:
-              save_current_state()  # Save the current state before moving to the previous spectrum
-              index -= 1
-              redshift_slider.value = get_Redshift_Mode(index)
-              update_viewer()
+        nonlocal galaxy_index
+        if galaxy_index > 0:
+            save_current_state()  # Save the current state before moving to the previous spectrum
+            galaxy_index -= 1
+            redshift_slider.value = get_Redshift_Mode(galaxy_index)
+            update_viewer()
 
     def save_to_csv(_):
-          save_current_state() 
+        save_current_state() 
 
     def on_redshift_change(change):
-        catalog_filtered.loc[index, "Redshift"] = change["new"]
+        galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
+        row_index = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()[0]
+        catalog_filtered.loc[row_index, "Redshift"] = change["new"]
         update_viewer()
 
     def on_flag_change(change):
-        catalog_filtered.loc[index, "Flag"] = change["new"]
+        galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
+        row_index = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()[0]
+        catalog_filtered.loc[row_index, "Flag"] = change["new"]
 
     redshift_slider.observe(on_redshift_change, names="value")
     flag_dropdown.observe(on_flag_change, names="value")
@@ -335,5 +306,6 @@ def interactive_spectrum_viewer(index=0):
 
 if __name__ == "__main__":
     catalog_filtered = pd.read_csv("path_to_your_catalog.csv")
+    catalog_filtered.insert(0, 'Index', range(len(catalog_filtered)))  # Add the Index column
     new_catalog_name = "output_catalog.csv"
     interactive_spectrum_viewer()

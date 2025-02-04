@@ -254,6 +254,10 @@ def main():
         chosen_pointing = input("Enter the pointing (P1, P2, P3, P5): ").strip().upper()
         catalog_sorted = catalog_sorted1[catalog_sorted1['Pointing'] == chosen_pointing]
 
+    # Add a column with the indexes of the galaxies
+    catalog_sorted.insert(0, 'Index', range(len(catalog_sorted)))
+
+
     catalog_name = 'initial_catalog_total.csv'
     catalog_sorted.to_csv(catalog_name, index=False)
     
