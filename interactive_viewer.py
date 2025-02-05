@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from astropy.io import fits
 from ipywidgets import FloatSlider, Text, Dropdown, Textarea, Button, Checkbox, VBox, HBox, Label, Layout, Output, HTML
-from scipy.stats import mode as scipy_mode
 
 # Emission lines dictionaries
 emission_lines = {"Lyα": 1215.67, "HeII": 1640.42, "CIV": 1550., "CIII": 1909., "[OII](1)": 3727.104102, "[OII](2)": 3729.887902, "[NeIII]": 3869.873137, "Hδ": 4102.922122, "Hγ": 4341.719762, "Hβ": 4862.73153, "[OIII](1)": 4960.337588, "[OIII](2)": 5008.283371, "Hα": 6564.706817, "[SII](1)": 6718.371995, "[SII](2)": 6732.746127, "[SIII]": 9533.841463, "Paδ": 10052.25852, "HeI": 10833.45512, "Paγ": 10941.23211, "[FeII]": 12570.38253, "Paβ": 12821.7568, "Paα": 18756.36916, "Brβ": 26259.07141, "Pfundβ": 37406.11053, "Brα": 40534.349, "Pfundα": 46551.12201}
@@ -16,13 +15,20 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
     plt.close("all")
     global catalog_filtered
 
-    codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES"]
+    codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES", "photo"]
 
     with fits.open(file) as hdul:
         data = hdul[1].data
         wavelength = data['WAVELENGTH'] * 10**4
         flux = data['FLUX']
         noise = data['FLUX_ERROR']
+        header = hdul[1].header
+
+        # Extracting extraction aperture values
+        extr_y1 = header.get('EXTR_Y1', None)
+        extr_y2 = header.get('EXTR_Y2', None)
+        extrystr = header.get('EXTRYSTR', None)
+        extrystp = header.get('EXTRYSTP', None)
 
     with fits.open(file_2d) as hdul1:
         spectrum_2d = hdul1['SCI'].data
@@ -41,8 +47,16 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
     gs = plt.GridSpec(2, 2, width_ratios=[2.5, 0.3], height_ratios=[0.5, 1])
 
     ax2d = fig.add_subplot(gs[0, 0])
-    ax2d.set_title(f"Galaxy ID: {galaxy_id}", fontsize=12)
+    ax2d.set_title(f"Galaxy ID: {int(galaxy_id)}", fontsize=12)
     pcm = ax2d.pcolormesh(X, Y, spectrum_2d, cmap='inferno', vmin=vmin, vmax=vmax, shading='auto')
+
+    # Plotting extraction aperture limits
+    if extr_y1 is not None and extr_y2 is not None:
+        ax2d.axhline(extr_y1, color='cyan', linestyle=':', label='Optimal Extraction Limit')
+        ax2d.axhline(extr_y2, color='cyan', linestyle=':')
+    elif extrystr is not None and extrystp is not None:
+        ax2d.axhline(extrystr, color='magenta', linestyle=':', label='Boxcar Extraction Limit')
+        ax2d.axhline(extrystp, color='magenta', linestyle=':')
 
     ax_hist = fig.add_subplot(gs[0, 1])
     pixel_values = spectrum_2d.flatten()
@@ -67,7 +81,7 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
     ax1d.plot(wavelength, flux, c='#003049', label=f"z = {redshift:.3f}")
     ax1d.errorbar(wavelength, flux, yerr=noise, c='#669bbc', fmt='none', alpha=0.4)
 
-    colors = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600']
+    colors = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600', '#ff5400']
 
     for idx, (code, data) in enumerate(redshifts_dict.items()):
         if not data["checked"]:
@@ -88,17 +102,18 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
             ax1d.axvline(observed_line, color='k', ls=':', alpha=0.7, lw=1)
             ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='k',
                       rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)
-    
+
     if em_line_check:
         for line, rest_wavelength in additional_emission_lines.items():
             observed_line = rest_wavelength * (1 + redshift)
             if observed_line < np.nanmax(wavelength) and observed_line > np.nanmin(wavelength):
                 ax1d.axvline(observed_line, color='grey', ls=':', alpha=0.7, lw=1)
                 ax1d.text(observed_line + 5, 0.7 * np.nanmax(flux), f"{line}", color='grey',
-                          rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)        
+                          rotation=90, verticalalignment='center', horizontalalignment='left', fontsize=8)
 
     ax1d.set_xlabel("Wavelength [Å]")
     ax1d.set_ylabel("Flux [Jy]")
+    ax1d.set_xlim([np.nanmin(wavelength), np.nanmax(wavelength)])
     ax1d.legend(loc="upper right", fontsize="small", ncol=2)
     ax1d.grid(c='lightgrey', ls=':')
 
@@ -119,11 +134,10 @@ def interactive_spectrum_viewer(galaxy_index=0):
     codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES"]
     
     def get_Redshift_Mode(index):
-        z_values = [catalog_filtered.iloc[index][f'{code}_Redshift'] for code in codes]
-        rounded_values = np.array([round(val, 2) for val in z_values])
-        return float(scipy_mode(rounded_values)[0])
+        z_mode = catalog_filtered.iloc[index]['Redshift_Mode']
+        return z_mode
     
-    redshift_slider = FloatSlider(value=get_Redshift_Mode(galaxy_index), min=0, max=20, step=0.001, description="Redshift:")
+    redshift_slider = FloatSlider(value=get_Redshift_Mode(galaxy_index), min=0, max=20, step=0.0001, readout_format='.3f', description="Redshift:")
     redshift_slider.style.handle_color = 'lightblue'
     galaxy_id_input = Text(value=str(catalog_filtered.iloc[galaxy_index]["Galaxy"]), layout=Layout(width='250px'), description="ID:", placeholder="Enter ID")
     em_line_button = Button(description="+ lines", button_style='danger', layout=Layout(width='60px'))
@@ -138,8 +152,8 @@ def interactive_spectrum_viewer(galaxy_index=0):
 
     def mark_attention(button):
         flag_dropdown.value = "0"; catalog_filtered.loc[catalog_filtered.index[galaxy_index], "Redshift"] = -2 
-        comments_box.value = "Uncertain solution, flagged for review"
-        catalog_filtered.loc[catalog_filtered.index[galaxy_index], "Comments"] = comments_box.value
+        #comments_box.value = "Uncertain solution, flagged for review"
+        catalog_filtered.loc[catalog_filtered.index[galaxy_index], "Comments"] = comments_box.value + ". Uncertain solution, flagged for review"
         update_viewer()
 
    
@@ -189,8 +203,9 @@ def interactive_spectrum_viewer(galaxy_index=0):
         for cb, feature in zip(checkboxes, features):
             cb.value = catalog_filtered.iloc[galaxy_index][feature] == 1
 
-        colorlist = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600']
-        checkboxes_redshift = [Checkbox(value=False, description='', style={'description_width': 'initial'}, layout={'width': 'auto'}) for _ in codes]
+        codes_total = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES", "photo"]
+        colorlist = ['#390099', '#006747', '#ff006e', '#8338ec', '#3a86ff', '#ffa600', '#ff5400']
+        checkboxes_redshift = [Checkbox(value=False, description='', style={'description_width': 'initial'}, layout={'width': 'auto'}) for _ in codes_total]
 
         global z_list
         try:
@@ -200,8 +215,8 @@ def interactive_spectrum_viewer(galaxy_index=0):
 
         # Now, create a list of HBox to pair each checkbox with its colored description
         styled_checkboxes = [
-            HBox([HTML(f'<span style="color: {color};">{code} ({round(catalog_filtered[f"{code}_Redshift"].iloc[galaxy_index], 2)})</span>'), checkbox])
-            for code, color, checkbox in zip(codes, colorlist, checkboxes_redshift)
+            HBox([HTML(f'<span style="color: {color};">{code} ({round(catalog_filtered[f"{code}_Redshift"].iloc[galaxy_index], 3)})</span>'), checkbox])
+            for code, color, checkbox in zip(codes_total, colorlist, checkboxes_redshift)
         ]
 
         # Create the grid layout for the checkboxes
@@ -210,8 +225,9 @@ def interactive_spectrum_viewer(galaxy_index=0):
         middle_2column = VBox(styled_checkboxes[2:3])
         middle_3column = VBox(styled_checkboxes[3:4])
         middle_4column = VBox(styled_checkboxes[4:5])
-        right_column = VBox(styled_checkboxes[5:])
-        checkbox_columns_z = HBox([left_column, middle_1column, middle_2column, middle_3column, middle_4column, right_column])
+        middle_5column = VBox(styled_checkboxes[5:6])
+        right_column = VBox(styled_checkboxes[6:])
+        checkbox_columns_z = HBox([left_column, middle_1column, middle_2column, middle_3column, middle_4column, middle_5column, right_column])
         z_list = VBox([checkbox_columns_z])
         z_list.layout = Layout(border='1px solid lightgrey', padding='1px', width='100%')
 
@@ -254,7 +270,7 @@ def interactive_spectrum_viewer(galaxy_index=0):
         catalog_filtered.loc[row_index, "Comments"] = comments_box.value
         catalog_filtered.loc[row_index, "Flag"] = flag_dropdown.value
         if not flag_dropdown.value:
-            catalog_filtered.loc[row_index, "Redshift"] = -99  # Set redshift to -99 if no flag value
+            catalog_filtered.loc[row_index, "Redshift"] = -99  
         for cb, feature in zip(checkboxes, features):
             catalog_filtered.loc[row_index, feature] = 1 if cb.value else 0
         catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
@@ -267,7 +283,10 @@ def interactive_spectrum_viewer(galaxy_index=0):
             save_current_state()  # Save the current state before moving to the next spectrum
             galaxy_index += 1
             redshift_slider.value = get_Redshift_Mode(galaxy_index)
-            update_viewer()
+            if flag_dropdown.value>1:
+                redshift_slider.value = catalog_filtered.loc[galaxy_index, "Redshift"]
+            
+        update_viewer()
 
     def on_prev(_):
         nonlocal galaxy_index
@@ -275,7 +294,10 @@ def interactive_spectrum_viewer(galaxy_index=0):
             save_current_state()  # Save the current state before moving to the previous spectrum
             galaxy_index -= 1
             redshift_slider.value = get_Redshift_Mode(galaxy_index)
-            update_viewer()
+            if flag_dropdown.value >1:
+                redshift_slider.value = catalog_filtered.loc[galaxy_index, "Redshift"]
+           
+        update_viewer()
 
     def save_to_csv(_):
         save_current_state() 

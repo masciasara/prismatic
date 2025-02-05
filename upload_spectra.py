@@ -78,7 +78,7 @@ def read_redshift_catalogs(pointing):
     ID_lime = lime['file']
 
     for ids in range(len(ID_lime)):
-        match = re.search(r's(\d+)_', ID_lime[ids])
+        match = re.search(r's(\d{1,9})_', ID_lime[ids])
         if match:
             extracted_number = match.group(1)
             ID_lime[ids] = extracted_number
@@ -98,7 +98,13 @@ def read_redshift_catalogs(pointing):
     CIGALE = pd.read_csv('solutions/CAPERS_v0.1_cigale_redshift_with_photometry.csv')
     CIGALE_ID = CIGALE['id']
 
-    return BAGPIPES, AT, ID_AT, msaexp, lime, ID_lime, MARZ, file_MARZ, CIGALE, CIGALE_ID
+    # Read the photometric catalog
+    photometric_catalog = pd.read_csv('solutions/CAPERS_UDS_master_yield_v2.1_actual.csv')
+
+    photo_z = photometric_catalog[['ID', 'z_UNICORN', 'ra', 'dec']]
+    photo_z_ID = photo_z['ID']
+
+    return BAGPIPES, AT, ID_AT, msaexp, lime, ID_lime, MARZ, file_MARZ, CIGALE, CIGALE_ID, photo_z, photo_z_ID
 
 def main():
     google_drive_url = "https://drive.google.com/uc?id=1nLwEX3edQI9ktHof9eAsH0z7lvUYFz7i"
@@ -143,6 +149,8 @@ def main():
     all_file_marz = []
     all_cigale = []
     all_cigale_id = []
+    all_photo_z = []
+    all_photo_z_id = []
 
     for pointing in pointings:
         source_ids, file1d, file2d = create_pointing_table(pointing, folder_path)
@@ -151,7 +159,7 @@ def main():
         total_file2d.extend(file2d)
         total_pointing.extend([pointing] * len(source_ids))
 
-        BAGPIPES, AT, ID_AT, msaexp, lime, ID_lime, MARZ, file_MARZ, CIGALE, CIGALE_ID = read_redshift_catalogs(pointing)
+        BAGPIPES, AT, ID_AT, msaexp, lime, ID_lime, MARZ, file_MARZ, CIGALE, CIGALE_ID, photo_z, photo_z_ID = read_redshift_catalogs(pointing)
         all_bagpipes.append(BAGPIPES)
         all_at.append(AT)
         all_id_at.append(ID_AT)
@@ -162,6 +170,8 @@ def main():
         all_file_marz.append(file_MARZ)
         all_cigale.append(CIGALE)
         all_cigale_id.append(CIGALE_ID)
+        all_photo_z.append(photo_z)
+        all_photo_z_id.append(photo_z_ID)
 
     galaxies = np.array(total_source_ids)
     redshift_bp = np.zeros(len(galaxies))
@@ -172,6 +182,9 @@ def main():
     redshifts_mode = np.zeros(len(galaxies))
     redshifts = np.zeros(len(galaxies))
     redshift_cigale = np.zeros(len(galaxies))
+    photo_z_values = np.zeros(len(galaxies))
+    ra_values = np.zeros(len(galaxies))
+    dec_values = np.zeros(len(galaxies))
 
     for i in range(len(galaxies)):
         for BAGPIPES in all_bagpipes:
@@ -204,6 +217,13 @@ def main():
                 if float(CIGALE_ID[kk]) == float(galaxies[i]):
                     redshift_cigale[i] = CIGALE['best.universe.redshift'][kk]
 
+        for photo_z_id, photo_z in zip(all_photo_z_id, all_photo_z):
+            for ll in range(len(photo_z_id)):
+                if float(photo_z_id[ll]) == float(galaxies[i]):
+                    photo_z_values[i] = photo_z['z_UNICORN'][ll]
+                    ra_values[i] = photo_z['ra'][ll]
+                    dec_values[i] = photo_z['dec'][ll]
+
     spectra_files_1d = np.array(total_file1d)
     spectra_files_2d = np.array(total_file2d)
 
@@ -221,6 +241,9 @@ def main():
         "Galaxy": galaxies,
         "1d_Spectrum": spectra_files_1d,
         "2d_Spectrum": spectra_files_2d,
+        "RA": ra_values,
+        "DEC": dec_values,
+        "photo_Redshift": photo_z_values,
         "Redshift": redshifts,
         "Pointing": total_pointing,
         "Flag": [""]*len(galaxies),
@@ -242,8 +265,11 @@ def main():
 
     catalog["Redshift"] = catalog["Redshift"].apply(lambda x: 0 if pd.isna(x) or x <= 0 else x)
     catalog_filtered = catalog[catalog["1d_Spectrum"].notnull() & (catalog["1d_Spectrum"] != "")]
-    
+
     catalog_sorted1 = catalog_filtered.sort_values(by="Galaxy").reset_index(drop=True)
+    
+    # Initialize catalog_sorted to catalog_sorted1
+    catalog_sorted = catalog_sorted1
     
     visualize = input("Do you want to visualize sources within a specific ID range or a specific pointing? (range/pointing/no): ").strip().lower()
     if visualize == 'range':
@@ -257,14 +283,12 @@ def main():
     # Add a column with the indexes of the galaxies
     catalog_sorted.insert(0, 'Index', range(len(catalog_sorted)))
 
-
     catalog_name = 'initial_catalog_total.csv'
     catalog_sorted.to_csv(catalog_name, index=False)
     
     new_catalog_name = input("Choose a name for the output catalog (remember the extension!): (e.g., final_pointing_YourName.csv) ")
     catalog_sorted.to_csv(new_catalog_name, index=False)
   
-    
     return catalog_sorted, new_catalog_name
 
 if __name__ == "__main__":
