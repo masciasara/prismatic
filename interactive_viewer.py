@@ -48,7 +48,8 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
 
     ax2d = fig.add_subplot(gs[0, 0])
     ax2d.set_title(f"Galaxy ID: {int(galaxy_id)}", fontsize=12)
-    pcm = ax2d.pcolormesh(X, Y, spectrum_2d, cmap='inferno', vmin=vmin, vmax=vmax, shading='auto')
+    spectrum_2d_flipped = np.flipud(spectrum_2d)
+    pcm = ax2d.pcolormesh(X, np.flipud(Y), spectrum_2d_flipped, cmap='inferno', vmin=vmin, vmax=vmax, shading='auto')
 
     # Plotting extraction aperture limits
     if extr_y1 is not None and extr_y2 is not None:
