@@ -127,7 +127,6 @@ def read_redshift_catalogs(pointing, field):
         BAGPIPES = pd.read_csv(os.path.join(catalog_path, f'capers_{field}_bagpipes_{pointing}.cat'), sep=r'\s+')
     elif field == "EGS":
         BAGPIPES = pd.read_csv(os.path.join(catalog_path, 'bagpipes_zfits.cat'), sep=r'\s+')
-        print(BAGPIPES)
     # AT catalog
     AT = pd.read_csv(os.path.join(catalog_path, f'CAPERS_{pointing}_zspec.txt'), sep=',')
     ID_AT = AT['file']
