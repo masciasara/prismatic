@@ -284,9 +284,9 @@ def interactive_spectrum_viewer(galaxy_index=0):
             save_current_state()  # Save the current state before moving to the next spectrum
             galaxy_index += 1
             redshift_slider.value = get_Redshift_Mode(galaxy_index)
-            if flag_dropdown.value>1:
-                redshift_slider.value = catalog_filtered.loc[galaxy_index, "Redshift"]
-            
+            if flag_dropdown.value != '':
+                if int(flag_dropdown.value)>1:
+                    redshift_slider.value = catalog_filtered.loc[galaxy_index, "Redshift"]
         update_viewer()
 
     def on_prev(_):
