@@ -266,18 +266,23 @@ def interactive_spectrum_viewer(galaxy_index=0):
 
     def save_current_state():
         galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
-        row_index = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()[0]
+        # Get all rows that match the galaxy_id
+        matching_rows = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()
         
-        catalog_filtered.loc[row_index, "Comments"] = comments_box.value
-        catalog_filtered.loc[row_index, "Flag"] = flag_dropdown.value
-        if not flag_dropdown.value:
-            catalog_filtered.loc[row_index, "Redshift"] = -99  
-        for cb, feature in zip(checkboxes, features):
-            catalog_filtered.loc[row_index, feature] = 1 if cb.value else 0
+        # Update all matching rows
+        for row_index in matching_rows:
+            catalog_filtered.loc[row_index, "Comments"] = comments_box.value
+            catalog_filtered.loc[row_index, "Flag"] = flag_dropdown.value
+            if not flag_dropdown.value:
+                catalog_filtered.loc[row_index, "Redshift"] = -99  
+            for cb, feature in zip(checkboxes, features):
+                catalog_filtered.loc[row_index, feature] = 1 if cb.value else 0
+        
+        # Save the updated dataframe
         catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
         with output:
             print(f"Current state saved to '{new_catalog_name}'.")
-
+        
     def on_next(_):
         nonlocal galaxy_index
         if galaxy_index < len(catalog_filtered) - 1:
@@ -305,14 +310,18 @@ def interactive_spectrum_viewer(galaxy_index=0):
 
     def on_redshift_change(change):
         galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
-        row_index = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()[0]
-        catalog_filtered.loc[row_index, "Redshift"] = change["new"]
+        matching_rows = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()
+        # Update the Redshift value for all matching rows
+        for row_index in matching_rows:
+            catalog_filtered.loc[row_index, "Redshift"] = change["new"]
         update_viewer()
 
     def on_flag_change(change):
         galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
-        row_index = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()[0]
-        catalog_filtered.loc[row_index, "Flag"] = change["new"]
+        matching_rows = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()
+        # Update the Redshift value for all matching rows
+        for row_index in matching_rows:
+            catalog_filtered.loc[row_index, "Flag"] = change["new"]
 
     redshift_slider.observe(on_redshift_change, names="value")
     flag_dropdown.observe(on_flag_change, names="value")
