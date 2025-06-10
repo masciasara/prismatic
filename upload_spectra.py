@@ -199,7 +199,7 @@ def read_redshift_catalogs(pointing, field):
     # Photometric catalog
     if field == "UDS":
         photo_file = os.path.join(catalog_path, f'CAPERS_{field}_master_yield_v2.1_actual.csv')
-    elif field == "EGS":
+    elif field == "EGS" or field == "COSMOS":
         photo_file = os.path.join(catalog_path, f'CAPERS_{field}_master_yield_v2.csv')
     else:
         photo_file = None
