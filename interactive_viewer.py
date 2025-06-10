@@ -127,12 +127,27 @@ def plot_spectrum(file, file_2d, redshift, galaxy_id, c_values, em_line_check):
 # Create an output widget
 output = Output()
 
+def safe_flag_to_int(flag_value):
+    """
+    Safely convert flag dropdown value to integer.
+    Returns 0 if the value is empty string or cannot be converted.
+    """
+    if flag_value == '' or flag_value is None:
+        return 0
+    try:
+        return int(flag_value)
+    except (ValueError, TypeError):
+        return 0
+
 def interactive_spectrum_viewer(galaxy_index=0):
     """
     View spectra interactively following the catalog order.
     """
 
     codes = ["AT", "MSAEXP", "LiMe", "MARZ", "Cigale", "BAGPIPES"]
+    
+    # Flag to prevent observer conflicts during navigation
+    updating_navigation = False
     
     def get_Redshift_Mode(index):
         z_mode = catalog_filtered.iloc[index]['Redshift_Mode']
@@ -273,42 +288,71 @@ def interactive_spectrum_viewer(galaxy_index=0):
         for row_index in matching_rows:
             catalog_filtered.loc[row_index, "Comments"] = comments_box.value
             catalog_filtered.loc[row_index, "Flag"] = flag_dropdown.value
+            catalog_filtered.loc[row_index, "Redshift"] = redshift_slider.value  # Always save the current slider value
             if not flag_dropdown.value:
-                catalog_filtered.loc[row_index, "Redshift"] = -99  
+                catalog_filtered.loc[row_index, "Redshift"] = -99  # Only override if flag is empty
             for cb, feature in zip(checkboxes, features):
                 catalog_filtered.loc[row_index, feature] = 1 if cb.value else 0
         
         # Save the updated dataframe
         catalog_filtered.to_csv(f"{new_catalog_name}", index=False)
         with output:
-            print(f"Current state saved to '{new_catalog_name}'.")
+            print(f"Current state saved to '{new_catalog_name}'. Galaxy {galaxy_id}: z={redshift_slider.value:.4f}, flag={flag_dropdown.value}")
         
     def on_next(_):
-        nonlocal galaxy_index
+        nonlocal galaxy_index, updating_navigation
         if galaxy_index < len(catalog_filtered) - 1:
             save_current_state()  # Save the current state before moving to the next spectrum
             galaxy_index += 1
-            redshift_slider.value = get_Redshift_Mode(galaxy_index)
-            if catalog_filtered.iloc[galaxy_index]["Flag"]!='':
-                if int(catalog_filtered.iloc[galaxy_index]["Flag"])>1:
-                    redshift_slider.value = catalog_filtered.iloc[galaxy_index]['Redshift']
+            
+            # Set flag to prevent observer interference
+            updating_navigation = True
+            
+            # Determine which redshift value to use
+            current_flag = catalog_filtered.iloc[galaxy_index]["Flag"]
+            flag_int = safe_flag_to_int(current_flag)
+            
+            if flag_int > 1:
+                # Use the saved redshift value for high-confidence flags
+                redshift_slider.value = catalog_filtered.iloc[galaxy_index]['Redshift']
+            else:
+                # Use the mode redshift for low-confidence or unset flags
+                redshift_slider.value = get_Redshift_Mode(galaxy_index)
+            
+            updating_navigation = False
         update_viewer()
 
     def on_prev(_):
-        nonlocal galaxy_index
+        nonlocal galaxy_index, updating_navigation
         if galaxy_index > 0:
             save_current_state()  # Save the current state before moving to the previous spectrum
             galaxy_index -= 1
-            redshift_slider.value = get_Redshift_Mode(galaxy_index)
-            if catalog_filtered.iloc[galaxy_index]["Flag"]!='':
-                if int(catalog_filtered.iloc[galaxy_index]["Flag"])>1:
-                    redshift_slider.value = catalog_filtered.iloc[galaxy_index]['Redshift']
+            
+            # Set flag to prevent observer interference
+            updating_navigation = True
+            
+            # Determine which redshift value to use
+            current_flag = catalog_filtered.iloc[galaxy_index]["Flag"]
+            flag_int = safe_flag_to_int(current_flag)
+            
+            if flag_int > 1:
+                # Use the saved redshift value for high-confidence flags
+                redshift_slider.value = catalog_filtered.iloc[galaxy_index]['Redshift']
+            else:
+                # Use the mode redshift for low-confidence or unset flags
+                redshift_slider.value = get_Redshift_Mode(galaxy_index)
+            
+            updating_navigation = False
         update_viewer()
 
     def save_to_csv(_):
         save_current_state() 
 
     def on_redshift_change(change):
+        # Skip if we're updating during navigation
+        if updating_navigation:
+            return
+            
         galaxy_id = catalog_filtered.iloc[galaxy_index]["Galaxy"]
         matching_rows = catalog_filtered.index[catalog_filtered["Galaxy"] == galaxy_id].tolist()
         # Update the Redshift value for all matching rows
