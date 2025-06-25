@@ -6,6 +6,8 @@ from astropy.io import fits
 from scipy.stats import mode as scipy_mode
 import gdown
 import zipfile
+import tkinter as tk
+from tkinter import filedialog
 
 pd.options.mode.chained_assignment = None
 
@@ -667,7 +669,7 @@ def main():
         catalog_sorted = all_catalogs[field_name]
     
     # Visualization options
-    visualize = input("Do you want to visualize sources within a specific ID range, a specific pointing, or a specific field? (range/pointing/field/all): ").strip().lower()
+    visualize = input("Do you want to visualize sources within a specific ID range, a specific pointing, a specific group or a specific field? (range/pointing/field/upload/all): ").strip().lower()
     
     if visualize == 'range':
         min_id = int(input("Enter the minimum ID: "))
@@ -676,6 +678,14 @@ def main():
     elif visualize == 'pointing':
         chosen_pointing = input("Enter the pointing (e.g., P1, P2, P3, P5): ").strip().upper()
         catalog_sorted = catalog_sorted[catalog_sorted['Pointing'] == chosen_pointing]
+    elif visualize == 'upload':
+        root = tk.Tk()
+        root.withdraw()
+        file_path = filedialog.askopenfilename(title="Select CSV file", filetypes=[("CSV files", "*.csv")])
+        if file_path:
+            uploaded_catalog = pd.read_csv(file_path)
+            galaxy_ids = uploaded_catalog['Galaxy'].astype(int).tolist()
+            catalog_sorted = catalog_sorted[catalog_sorted['Galaxy'].astype(int).isin(galaxy_ids)]
     elif visualize == 'field' and len(all_catalogs) > 1:
         chosen_field = input("Enter the field name (UDS, EGS, COSMOS): ").strip().upper()
         catalog_sorted = catalog_sorted[catalog_sorted['Field'] == chosen_field]
