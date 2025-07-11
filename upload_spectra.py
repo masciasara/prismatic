@@ -75,7 +75,7 @@ def get_spectra_file_paths_and_ids(folder, pointing, field):
                 spectra_dict[source_id]['x1d'] = os.path.join(folder, filename)
             elif file_type == 's2d':
                 spectra_dict[source_id]['s2d'] = os.path.join(folder, filename)
-    
+
     return spectra_dict
 
 def create_pointing_table(pointing, folder_path, field):
@@ -622,7 +622,7 @@ def main():
         "EGS": {
             "google_drive_url": "https://drive.google.com/uc?id=12ilzJDKhUdu00nbsU_4dxwdWIxuu61xA",
             "output_folder": "data_EGS",
-            "pointings": ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'MultiPointing']  # Update with actual EGS pointings
+            "pointings": ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7']  # Update with actual EGS pointings
         },
         "COSMOS": {
             "google_drive_url": "https://drive.google.com/uc?id=1lZri9sfRakE9lQwsWhaXbVTqIZNl0IUw",
