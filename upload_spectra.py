@@ -620,7 +620,7 @@ def main():
             "pointings": ['P1', 'P2', 'P3', 'P5']
         },
         "EGS": {
-            "google_drive_url": "https://drive.google.com/uc?id=1-lBbb9AT9HcBaKe067YHTjIQfOU6FazL",
+            "google_drive_url": "https://drive.google.com/uc?id=12ilzJDKhUdu00nbsU_4dxwdWIxuu61xA",
             "output_folder": "data_EGS",
             "pointings": ['P1', 'P2', 'P3', 'P4', 'P5', 'P7']  # Update with actual EGS pointings
         },
