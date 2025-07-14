@@ -135,7 +135,7 @@ def read_redshift_catalogs(pointing, field):
         bagpipes_file = os.path.join(catalog_path, f'capers_{field}_bagpipes_{pointing}.cat')
         BAGPIPES = pd.read_csv(bagpipes_file, sep=r'\s+')
     elif field == "EGS": 
-        bagpipes_file = os.path.join(catalog_path, 'bagpipes_zfits.cat')
+        bagpipes_file = os.path.join(catalog_path, f'capers_{field}_bagpipes_{pointing}.cat')
         BAGPIPES = pd.read_csv(bagpipes_file, sep=r'\s+')
     else:
         BAGPIPES = None
@@ -173,20 +173,29 @@ def read_redshift_catalogs(pointing, field):
     if field == "UDS":
         marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_redshift.fits')
     elif field == "EGS":
-        marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_marz_result.fits')
+        if pointing == "P6":
+            marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_vetted.csv')
+        else:
+            marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_marz_result.fits')
     else:
         marz_file = None
-    
+
     if marz_file:
-        with fits.open(marz_file) as marz:
-            marz_data = marz[1].data
-            MARZ = pd.DataFrame(marz_data)
-        # Use vectorized string operations
-        file_MARZ = MARZ['Name'].str.extract(r's(\d+)')[0]
+        if field == "EGS" and pointing == "P6":
+            # Handle CSV file for P6
+            MARZ = pd.read_csv(marz_file)
+            file_MARZ = MARZ['id']
+        else:
+            # Handle FITS files
+            with fits.open(marz_file) as marz:
+                marz_data = marz[1].data
+                MARZ = pd.DataFrame(marz_data)
+            # Use vectorized string operations
+            file_MARZ = MARZ['Name'].str.extract(r's(\d+)')[0]
     else:
         MARZ = None
-        file_MARZ = None
-    
+        file_MARZ = None    
+		
     # CIGALE catalog
     if field == "UDS":
         cigale_file = os.path.join(catalog_path, f'CAPERS_v0.1_cigale_redshift_with_photometry.csv')
@@ -202,7 +211,7 @@ def read_redshift_catalogs(pointing, field):
     if field == "UDS":
         photo_file = os.path.join(catalog_path, f'CAPERS_{field}_master_yield_v2.1_actual.csv')
     elif field == "EGS" or field == "COSMOS":
-        photo_file = os.path.join(catalog_path, f'CAPERS_{field}_master_yield_v2.csv')
+        photo_file = os.path.join(catalog_path, f'CAPERS_{field}_master_yield_v4.csv')
     else:
         photo_file = None
     
@@ -345,12 +354,17 @@ def process_field(field, google_drive_url, output_folder, pointings):
                 lime_df['pointing'] = pointing
                 lime_list.append(lime_df[['galaxy_id', 'z_manual', 'pointing']].dropna(subset=['galaxy_id']))
             
-            # MARZ
+            # MARZ processing
             if cat_info['MARZ'] is not None and cat_info['file_MARZ'] is not None:
                 marz_df = cat_info['MARZ'].copy()
-                marz_df['galaxy_id'] = pd.to_numeric(cat_info['file_MARZ'], errors='coerce')
-                marz_df['pointing'] = pointing
-                marz_list.append(marz_df[['galaxy_id', 'AutoZ', 'pointing']].dropna(subset=['galaxy_id']))
+                if field == "EGS" and pointing != "P6":
+                		marz_df['galaxy_id'] = pd.to_numeric(cat_info['file_MARZ'], errors='coerce')
+                		marz_df['pointing'] = pointing; marz_df['redshift'] = marz_df['AutoZ'] 
+                if field == "EGS" and pointing == "P6":
+                		marz_df['galaxy_id'] = cat_info['file_MARZ']
+                		marz_df['pointing'] = "P6"; marz_df['redshift'] = marz_df['redshift'] 
+                	
+                marz_list.append(marz_df[['galaxy_id', 'redshift', 'pointing']].dropna(subset=['galaxy_id']))            
             
             # CIGALE
             if cat_info['CIGALE'] is not None and cat_info['CIGALE_ID'] is not None:
@@ -403,13 +417,13 @@ def process_field(field, google_drive_url, output_folder, pointings):
             )
             df[result_col] = merged[value_col].fillna(0)
         return df
-    
+            
     # Merge each catalog type
     result_df = safe_merge(result_df, consolidated_cats['bagpipes'], 'bagpipes', 'z_bp', 'redshift_bp')
     result_df = safe_merge(result_df, consolidated_cats['at'], 'at', 'z', 'redshift_at')
     result_df = safe_merge(result_df, consolidated_cats['msaexp'], 'msaexp', 'z_spec', 'redshift_msaexp')
     result_df = safe_merge(result_df, consolidated_cats['lime'], 'lime', 'z_manual', 'redshift_lime')
-    result_df = safe_merge(result_df, consolidated_cats['marz'], 'marz', 'AutoZ', 'redshift_marz')
+    result_df = safe_merge(result_df, consolidated_cats['marz'], 'marz', 'redshift', 'redshift_marz')
     result_df = safe_merge(result_df, consolidated_cats['cigale'], 'cigale', 'best.universe.redshift', 'redshift_cigale')
     
     # Special handling for photo_z (multiple columns)
