@@ -165,6 +165,10 @@ def read_redshift_catalogs(pointing, field):
         lime_file = os.path.join(catalog_path, f'CAPERS_{field}_V0.2_lime_redshifts_v2.txt')
         lime = pd.read_csv(lime_file, sep='\s+')
         ID_lime = lime['optext'].astype(str).str.extract(r's(\d{1,9})_')[0]
+	elif field == "COSMOS":
+        lime_file = os.path.join(catalog_path, f'CAPERS_{field}_V0.2.1_redshifts_aspectv0.3_and_manual_inspection.csv')
+        lime = pd.read_csv(lime_file)
+        ID_lime = lime['file_name'].astype(str).str.extract(r's(\d{1,9})_')[0]
     else:
         lime = None
         ID_lime = None
@@ -177,6 +181,8 @@ def read_redshift_catalogs(pointing, field):
             marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_vetted.csv')
         else:
             marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_marz_result.fits')
+	elif field == "COSMOS":
+        marz_file = os.path.join(catalog_path, f'capers_{field.lower()}_{pointing.lower()}_marz_result.fits')
     else:
         marz_file = None
 
@@ -201,6 +207,8 @@ def read_redshift_catalogs(pointing, field):
         cigale_file = os.path.join(catalog_path, f'CAPERS_v0.1_cigale_redshift_with_photometry.csv')
     elif field == "EGS":
         cigale_file = os.path.join(catalog_path, f'redshift-cigale-v2.csv')
+ 	elif field == "COSMOS":
+        cigale_file = os.path.join(catalog_path, f'CIGALE-redshift-COSMOS-V0.2.1.csv')
     else:
         cigale_file = None
     
