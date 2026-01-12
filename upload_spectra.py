@@ -368,14 +368,11 @@ def process_field(field, google_drive_url, output_folder, pointings):
             if cat_info['MARZ'] is not None and cat_info['file_MARZ'] is not None:
                 marz_df = cat_info['MARZ'].copy()
                 if field == "EGS" and pointing != "P6":
-                		marz_df['galaxy_id'] = pd.to_numeric(cat_info['file_MARZ'], errors='coerce')
-                        marz_df['pointing'] = pointing; marz_df['redshift'] = marz_df['AutoZ'] 
+                		marz_df['galaxy_id'] = pd.to_numeric(cat_info['file_MARZ'], errors='coerce'); marz_df['pointing'] = pointing; marz_df['redshift'] = marz_df['AutoZ'] 
                 if field == "EGS" and pointing == "P6":
-                		marz_df['galaxy_id'] = cat_info['file_MARZ']
-                        marz_df['pointing'] = "P6"; marz_df['redshift'] = marz_df['redshift'] 
+                		marz_df['galaxy_id'] = cat_info['file_MARZ']; marz_df['pointing'] = "P6"; marz_df['redshift'] = marz_df['redshift'] 
                 if field == "COSMOS":
-                		marz_df['galaxy_id'] = pd.to_numeric(cat_info['file_MARZ'], errors='coerce')
-                        marz_df['pointing'] = pointing; marz_df['redshift'] = marz_df['AutoZ'] 
+                		marz_df['galaxy_id'] = pd.to_numeric(cat_info['file_MARZ'], errors='coerce'); marz_df['pointing'] = pointing; marz_df['redshift'] = marz_df['AutoZ'] 
 
                 marz_list.append(marz_df[['galaxy_id', 'redshift', 'pointing']].dropna(subset=['galaxy_id']))            
             
