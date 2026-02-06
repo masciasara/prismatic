@@ -210,7 +210,7 @@ def read_redshift_catalogs(pointing, field):
     
     # LiMe catalog
     if field == "UDS":
-        lime_file = os.path.join(catalog_path, f'CAPERS_{field}_automatic_redshifts_inspected_v0.5.csv')
+        lime_file = os.path.join(catalog_path, f'CAPERS_{field}_V0.4_automatic_redshifts_inspected_v0.5.csv')
         lime = load_catalog_safe(lime_file, file_type='csv')
         ID_lime = lime['id'].astype(str).str.extract(r's(\d{1,9})_')[0] if lime is not None else None
     elif field == "EGS":
